@@ -1,19 +1,19 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kotlin.android) // Use KSP instead of id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "com.example.smartshopmobile"
-    compileSdk = 35 // Stable modern version
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.smartshopmobile"
         minSdk = 24
-        targetSdk = 35 // Matches compileSdk
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -33,11 +33,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    buildFeatures {
-        compose = true
-    }
     kotlinOptions {
         jvmTarget = "11"
+    }
+    buildFeatures {
+        compose = true
     }
 }
 
@@ -50,11 +50,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.navigation.compose)
 
-    // Hilt - All using KSP now
+    // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.core.ktx)
-    ksp(libs.hilt.compiler) 
+    ksp(libs.hilt.compiler)
     ksp(libs.hilt.ext.compiler)
     implementation(libs.hilt.ext.navigation.compose)
 
