@@ -1,14 +1,17 @@
 package com.example.smartshopmobile.ui.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.smartshopmobile.ui.components.SmartShopTextField
 import com.example.smartshopmobile.ui.theme.SmartShopMobileTheme
 
 @Composable
@@ -34,34 +38,67 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome Back!", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = "SmartShop",
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        
+        Spacer(modifier = Modifier.height(48.dp))
 
-        OutlinedTextField(
+        Text(
+            text = "Login",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.align(Alignment.Start)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SmartShopTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") }
+            label = "Email"
         )
+        
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        SmartShopTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = "Password",
             visualTransformation = PasswordVisualTransformation()
         )
+
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(onClick = { onLoginClick(email, password) }) {
-            Text("Login")
+        Button(
+            onClick = { onLoginClick(email, password) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Text("Log In", style = MaterialTheme.typography.labelLarge)
         }
 
+        Spacer(modifier = Modifier.height(32.dp))
+
         TextButton(onClick = onNavigateToRegister) {
-            Text("Don't have an account? Register")
+            Text(
+                text = "Don't have an account? Sign up",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

@@ -1,39 +1,35 @@
 package com.example.smartshopmobile.ui.theme
 
-import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
+// SmartShop is a Dark-first design system.
 private val DarkColorScheme = darkColorScheme(
     primary = Primary,
-    secondary = Secondary,
+    onPrimary = OnPrimary,
+    background = Background,
+    onBackground = OnBackground,
     surface = Surface,
-    error = Error
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    secondary = Secondary,
-    surface = Surface,
-    error = Error
+    onSurface = OnSurface,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = Muted,
+    error = Error,
+    onError = OnError,
+    outline = Outline
 )
 
 @Composable
 fun SmartShopMobileTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // We default to dark theme to enforce the brand identity, but respect system override if needed.
+    // However, the design guide implies a strict dark mode look.
+    darkTheme: Boolean = true, 
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        DarkColorScheme
-    } else {
-        LightColorScheme
-    }
-
+    // We ignore dynamic color to maintain strict brand identity
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = DarkColorScheme,
         typography = Typography,
         content = content
     )
