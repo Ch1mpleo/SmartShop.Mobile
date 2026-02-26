@@ -22,12 +22,9 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun SmartShopMobileTheme(
-    // We default to dark theme to enforce the brand identity, but respect system override if needed.
-    // However, the design guide implies a strict dark mode look.
-    darkTheme: Boolean = true, 
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    // We ignore dynamic color to maintain strict brand identity
     MaterialTheme(
         colorScheme = DarkColorScheme,
         typography = Typography,
