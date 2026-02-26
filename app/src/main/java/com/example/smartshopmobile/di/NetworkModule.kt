@@ -1,6 +1,7 @@
 package com.example.smartshopmobile.di
 
 import com.example.smartshopmobile.data.api.AuthService
+import com.example.smartshopmobile.data.api.UserService
 import com.example.smartshopmobile.data.network.AuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -43,5 +44,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthService(retrofit: Retrofit): AuthService {
         return retrofit.create(AuthService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserService(retrofit: Retrofit): UserService {
+        return retrofit.create(UserService::class.java)
     }
 }
