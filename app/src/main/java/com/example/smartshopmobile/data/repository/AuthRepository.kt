@@ -2,10 +2,11 @@ package com.example.smartshopmobile.data.repository
 
 import com.example.smartshopmobile.data.api.AuthService
 import com.example.smartshopmobile.data.local.TokenManager
+import com.example.smartshopmobile.data.model.ApiResponse
 import com.example.smartshopmobile.data.model.LoginRequest
-import com.example.smartshopmobile.data.model.LoginResponse
 import com.example.smartshopmobile.data.model.RegisterRequest
-import com.example.smartshopmobile.data.model.RegisterResponse
+import com.example.smartshopmobile.data.model.TokenData
+import com.example.smartshopmobile.data.model.UserData
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -14,7 +15,7 @@ class AuthRepository @Inject constructor(
     private val tokenManager: TokenManager
 ) : BaseRepository() {
 
-    suspend fun login(request: LoginRequest): Flow<Result<LoginResponse>> = safeApiCall {
+    suspend fun login(request: LoginRequest): Flow<Result<ApiResponse<TokenData>>> = safeApiCall {
         val response = authService.login(request)
         if (response.isSuccess && response.value?.data?.accessToken != null) {
             tokenManager.saveToken(response.value.data.accessToken)
@@ -24,7 +25,7 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun register(request: RegisterRequest): Flow<Result<RegisterResponse>> = safeApiCall {
+    suspend fun register(request: RegisterRequest): Flow<Result<ApiResponse<UserData>>> = safeApiCall {
         val response = authService.register(request)
         if (response.isSuccess) {
             response
