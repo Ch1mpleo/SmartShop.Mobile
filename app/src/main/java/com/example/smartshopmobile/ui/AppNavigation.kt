@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.example.smartshopmobile.ui.home.WelcomeScreen
 import com.example.smartshopmobile.ui.product.ProductDetailScreen
 import com.example.smartshopmobile.ui.profile.ProfileScreen
+import com.example.smartshopmobile.ui.store.StoreLocationScreen
 
 @Composable
 fun AppNavigation() {
@@ -17,7 +18,8 @@ fun AppNavigation() {
         composable("welcome") {
             WelcomeScreen(
                 onProfileClick = { navController.navigate("profile") },
-                onProductClick = { productId -> navController.navigate("productDetail/$productId") }
+                onProductClick = { productId -> navController.navigate("productDetail/$productId") },
+                onStoreClick = { navController.navigate("storeLocation") }
             )
         }
         composable("profile") {
@@ -30,6 +32,11 @@ fun AppNavigation() {
             arguments = listOf(navArgument("productId") { type = NavType.StringType })
         ) {
             ProductDetailScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable("storeLocation") {
+            StoreLocationScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

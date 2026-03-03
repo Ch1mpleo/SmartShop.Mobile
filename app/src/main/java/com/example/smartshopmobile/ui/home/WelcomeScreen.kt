@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -60,6 +61,7 @@ import com.example.smartshopmobile.ui.theme.SmartShopMobileTheme
 fun WelcomeScreen(
     onProfileClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onStoreClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -91,6 +93,7 @@ fun WelcomeScreen(
                 selectedCategoryId = selectedCategoryId,
                 onCategorySelected = viewModel::onCategorySelected,
                 onProductClick = onProductClick,
+                onStoreClick = onStoreClick,
                 isLoading = isLoading,
                 error = error
             )
@@ -163,6 +166,7 @@ fun HomeContent(
     selectedCategoryId: String?,
     onCategorySelected: (String?) -> Unit,
     onProductClick: (String) -> Unit,
+    onStoreClick: () -> Unit,
     isLoading: Boolean,
     error: String?
 ) {
@@ -187,6 +191,44 @@ fun HomeContent(
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Store Locator Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onStoreClick() },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Store Locator",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "Find the nearest SmartShop",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 // Categories
                 Text(
@@ -367,6 +409,7 @@ fun WelcomeScreenPreview() {
             selectedCategoryId = null,
             onCategorySelected = {},
             onProductClick = {},
+            onStoreClick = {},
             isLoading = false,
             error = null
         )
