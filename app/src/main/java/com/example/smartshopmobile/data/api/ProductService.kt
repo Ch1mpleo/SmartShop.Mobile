@@ -5,6 +5,7 @@ import com.example.smartshopmobile.data.model.PaginatedData
 import com.example.smartshopmobile.data.model.ProductResponse
 import com.example.smartshopmobile.data.model.ProductStorageResponse
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ProductService {
@@ -18,6 +19,11 @@ interface ProductService {
         @Query("categoryId") categoryId: String? = null,
         @Query("productId") productId: String? = null
     ): ApiResponse<PaginatedData<ProductResponse>>
+
+    @GET("api/products/{productId}")
+    suspend fun getProductById(
+        @Path("productId") productId: String
+    ): ApiResponse<ProductResponse>
 
     @GET("api/product-storages")
     suspend fun getProductStorages(

@@ -58,6 +58,8 @@ import com.example.smartshopmobile.ui.theme.SmartShopMobileTheme
 
 @Composable
 fun WelcomeScreen(
+    onProfileClick: () -> Unit,
+    onProductClick: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -70,7 +72,10 @@ fun WelcomeScreen(
 
     Scaffold(
         topBar = {
-            HomeTopBar(user = user)
+            HomeTopBar(
+                user = user,
+                onProfileClick = onProfileClick
+            )
         }
     ) { paddingValues ->
         Box(
@@ -85,6 +90,7 @@ fun WelcomeScreen(
                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
                 selectedCategoryId = selectedCategoryId,
                 onCategorySelected = viewModel::onCategorySelected,
+                onProductClick = onProductClick,
                 isLoading = isLoading,
                 error = error
             )
@@ -94,11 +100,15 @@ fun WelcomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(user: UserData?) {
+fun HomeTopBar(
+    user: UserData?,
+    onProfileClick: () -> Unit
+) {
     TopAppBar(
         title = {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { onProfileClick() }
             ) {
                 Surface(
                     shape = CircleShape,
@@ -152,6 +162,7 @@ fun HomeContent(
     onSearchQueryChanged: (String) -> Unit,
     selectedCategoryId: String?,
     onCategorySelected: (String?) -> Unit,
+    onProductClick: (String) -> Unit,
     isLoading: Boolean,
     error: String?
 ) {
@@ -217,7 +228,10 @@ fun HomeContent(
             }
         } else {
             items(products) { product ->
-                ProductItem(product = product)
+                ProductItem(
+                    product = product,
+                    onClick = { onProductClick(product.id) }
+                )
             }
         }
     }
@@ -285,14 +299,19 @@ fun CategoryItem(
 }
 
 @Composable
-fun ProductItem(product: ProductResponse) {
+fun ProductItem(
+    product: ProductResponse,
+    onClick: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier.padding(8.dp)
@@ -347,6 +366,7 @@ fun WelcomeScreenPreview() {
             onSearchQueryChanged = {},
             selectedCategoryId = null,
             onCategorySelected = {},
+            onProductClick = {},
             isLoading = false,
             error = null
         )
