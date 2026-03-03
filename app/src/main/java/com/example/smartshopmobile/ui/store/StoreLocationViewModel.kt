@@ -5,13 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartshopmobile.data.api.StoreLocationService
 import com.example.smartshopmobile.data.model.StoreLocationResponse
 import com.example.smartshopmobile.data.repository.GenericRepository
-import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class UserLocation(val latitude: Double, val longitude: Double)
 
 @HiltViewModel
 class StoreLocationViewModel @Inject constructor(
@@ -25,8 +26,8 @@ class StoreLocationViewModel @Inject constructor(
     private val _nearestStores = MutableStateFlow<List<StoreLocationResponse>>(emptyList())
     val nearestStores: StateFlow<List<StoreLocationResponse>> = _nearestStores.asStateFlow()
 
-    private val _userLocation = MutableStateFlow<LatLng?>(null)
-    val userLocation: StateFlow<LatLng?> = _userLocation.asStateFlow()
+    private val _userLocation = MutableStateFlow<UserLocation?>(null)
+    val userLocation: StateFlow<UserLocation?> = _userLocation.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -53,13 +54,13 @@ class StoreLocationViewModel @Inject constructor(
         }
     }
 
-    fun findNearestStores(location: LatLng) {
-        _userLocation.value = location
+    fun findNearestStores(latitude: Double, longitude: Double) {
+        _userLocation.value = UserLocation(latitude, longitude)
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             genericRepository.request { 
-                storeLocationService.getNearestStoreLocations(location.latitude, location.longitude) 
+                storeLocationService.getNearestStoreLocations(latitude, longitude)
             }.collect { result ->
                 result.onSuccess { response ->
                     _nearestStores.value = response.value?.data ?: emptyList()

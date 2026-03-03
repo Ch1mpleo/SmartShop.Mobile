@@ -67,9 +67,8 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
-    // Maps
-    implementation(libs.maps.compose)
-    implementation(libs.play.services.maps)
+    // OpenStreetMap (osmdroid)
+    implementation(libs.osmdroid.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
