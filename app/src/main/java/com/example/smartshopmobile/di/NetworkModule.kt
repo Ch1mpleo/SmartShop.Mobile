@@ -1,6 +1,9 @@
 package com.example.smartshopmobile.di
 
 import com.example.smartshopmobile.data.api.AuthService
+import com.example.smartshopmobile.data.api.CategoryService
+import com.example.smartshopmobile.data.api.ProductService
+import com.example.smartshopmobile.data.api.StoreLocationService
 import com.example.smartshopmobile.data.api.UserService
 import com.example.smartshopmobile.data.network.AuthInterceptor
 import dagger.Module
@@ -50,5 +53,23 @@ object NetworkModule {
     @Singleton
     fun provideUserService(retrofit: Retrofit): UserService {
         return retrofit.create(UserService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCategoryService(retrofit: Retrofit): CategoryService {
+        return retrofit.create(CategoryService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProductService(retrofit: Retrofit): ProductService {
+        return retrofit.create(ProductService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStoreLocationService(retrofit: Retrofit): StoreLocationService {
+        return retrofit.create(StoreLocationService::class.java)
     }
 }
