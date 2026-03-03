@@ -1,5 +1,6 @@
 package com.example.smartshopmobile.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -21,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +65,8 @@ fun WelcomeScreen(
     val user by viewModel.user.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
 
     Scaffold(
         topBar = {
@@ -72,22 +78,16 @@ fun WelcomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else if (error != null) {
-                Text(
-                    text = error ?: "An unknown error occurred",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else {
-                HomeContent(
-                    categories = categories,
-                    products = products
-                )
-            }
+            HomeContent(
+                categories = categories,
+                products = products,
+                searchQuery = searchQuery,
+                onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                selectedCategoryId = selectedCategoryId,
+                onCategorySelected = viewModel::onCategorySelected,
+                isLoading = isLoading,
+                error = error
+            )
         }
     }
 }
@@ -100,7 +100,6 @@ fun HomeTopBar(user: UserData?) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // User Avatar Placeholder
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.secondaryContainer,
@@ -148,81 +147,139 @@ fun HomeTopBar(user: UserData?) {
 @Composable
 fun HomeContent(
     categories: List<CategoryResponse>,
-    products: List<ProductResponse>
+    products: List<ProductResponse>,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    selectedCategoryId: String?,
+    onCategorySelected: (String?) -> Unit,
+    isLoading: Boolean,
+    error: String?
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Categories Section
-        Text(
-            text = "Categories",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        CategoryList(categories = categories)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Products Section
-        Text(
-            text = "Popular Products",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        ProductGrid(products = products)
-    }
-}
-
-@Composable
-fun CategoryList(categories: List<CategoryResponse>) {
-    LazyRow(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(bottom = 8.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(categories) { category ->
-            CategoryItem(category = category)
+        item(span = { GridItemSpan(2) }) {
+            Column {
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search products...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Categories
+                Text(
+                    text = "Categories",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                CategoryList(
+                    categories = categories,
+                    selectedCategoryId = selectedCategoryId,
+                    onCategorySelected = onCategorySelected
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Text(
+                    text = "Popular Products",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        if (isLoading) {
+            item(span = { GridItemSpan(2) }) {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else if (error != null) {
+            item(span = { GridItemSpan(2) }) {
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        } else {
+            items(products) { product ->
+                ProductItem(product = product)
+            }
         }
     }
 }
 
 @Composable
-fun CategoryItem(category: CategoryResponse) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun CategoryList(
+    categories: List<CategoryResponse>,
+    selectedCategoryId: String?,
+    onCategorySelected: (String?) -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 8.dp)
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = category.categoryName,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+        item {
+            CategoryItem(
+                categoryName = "All",
+                isSelected = selectedCategoryId == null,
+                onClick = { onCategorySelected(null) }
+            )
+        }
+        items(categories) { category ->
+            CategoryItem(
+                categoryName = category.categoryName,
+                isSelected = selectedCategoryId == category.id,
+                onClick = { onCategorySelected(category.id) }
             )
         }
     }
 }
 
 @Composable
-fun ProductGrid(products: List<ProductResponse>) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(bottom = 16.dp)
+fun CategoryItem(
+    categoryName: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) 
+                MaterialTheme.colorScheme.primaryContainer 
+            else 
+                MaterialTheme.colorScheme.secondaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 2.dp),
+        modifier = Modifier.clickable(onClick = onClick)
     ) {
-        items(products) { product ->
-            ProductItem(product = product)
+        Box(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = categoryName,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
+                    MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
         }
     }
 }
@@ -240,7 +297,6 @@ fun ProductItem(product: ProductResponse) {
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
-            // Product Image Placeholder
             AsyncImage(
                 model = product.imageUrl,
                 contentDescription = product.productName,
@@ -277,9 +333,6 @@ fun ProductItem(product: ProductResponse) {
 @Composable
 fun WelcomeScreenPreview() {
     SmartShopMobileTheme {
-        // Mock data for preview could be injected here if ViewModel was abstracted
-        // For now, preview might fail without Hilt, so we'd need a fake ViewModel
-        // or just preview components separately.
         HomeContent(
             categories = listOf(
                 CategoryResponse("1", "Fashion", "", 10),
@@ -289,7 +342,13 @@ fun WelcomeScreenPreview() {
                 ProductResponse(
                     "1", "Smartphone", "Cool phone", "Very cool phone", "", 999.0, "", "InStock", 10, "2", "Electronics", ""
                 )
-            )
+            ),
+            searchQuery = "",
+            onSearchQueryChanged = {},
+            selectedCategoryId = null,
+            onCategorySelected = {},
+            isLoading = false,
+            error = null
         )
     }
 }

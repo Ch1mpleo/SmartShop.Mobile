@@ -10,11 +10,13 @@ import com.example.smartshopmobile.data.model.ProductResponse
 import com.example.smartshopmobile.data.model.UserData
 import com.example.smartshopmobile.data.repository.GenericRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -40,6 +42,14 @@ class HomeViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _selectedCategoryId = MutableStateFlow<String?>(null)
+    val selectedCategoryId: StateFlow<String?> = _selectedCategoryId.asStateFlow()
+
+    private var searchJob: Job? = null
+
     init {
         loadData()
     }
@@ -59,12 +69,30 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(500) // Debounce
+            fetchProducts()
+        }
+    }
+
+    fun onCategorySelected(categoryId: String?) {
+        if (_selectedCategoryId.value == categoryId) {
+            _selectedCategoryId.value = null // Toggle off
+        } else {
+            _selectedCategoryId.value = categoryId
+        }
+        fetchProducts()
+    }
+
     private suspend fun fetchUser() {
         genericRepository.request { userService.getCurrentUser() }.collect { result ->
             result.onSuccess { response ->
                 _user.value = response.value?.data
             }.onFailure {
-                // Handle user fetch error silently or show specific error
+                // Handle user fetch error silently
             }
         }
     }
@@ -79,12 +107,19 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun fetchProducts() {
-        genericRepository.request { productService.getProducts() }.collect { result ->
-            result.onSuccess { response ->
-                _products.value = response.value?.data?.items ?: emptyList()
-            }.onFailure { e ->
-                _error.value = e.message
+    private fun fetchProducts() {
+        viewModelScope.launch {
+            genericRepository.request { 
+                productService.getProducts(
+                    search = _searchQuery.value.takeIf { it.isNotBlank() },
+                    categoryId = _selectedCategoryId.value
+                ) 
+            }.collect { result ->
+                result.onSuccess { response ->
+                    _products.value = response.value?.data?.items ?: emptyList()
+                }.onFailure { e ->
+                    _error.value = e.message
+                }
             }
         }
     }
