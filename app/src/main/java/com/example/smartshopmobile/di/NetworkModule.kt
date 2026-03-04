@@ -1,10 +1,6 @@
 package com.example.smartshopmobile.di
 
-import com.example.smartshopmobile.data.api.AuthService
-import com.example.smartshopmobile.data.api.CategoryService
-import com.example.smartshopmobile.data.api.ProductService
-import com.example.smartshopmobile.data.api.StoreLocationService
-import com.example.smartshopmobile.data.api.UserService
+import com.example.smartshopmobile.data.api.*
 import com.example.smartshopmobile.data.network.AuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -45,31 +41,33 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthService(retrofit: Retrofit): AuthService {
-        return retrofit.create(AuthService::class.java)
-    }
+    fun provideAuthService(retrofit: Retrofit): AuthService = retrofit.create(AuthService::class.java)
 
     @Provides
     @Singleton
-    fun provideUserService(retrofit: Retrofit): UserService {
-        return retrofit.create(UserService::class.java)
-    }
+    fun provideUserService(retrofit: Retrofit): UserService = retrofit.create(UserService::class.java)
 
     @Provides
     @Singleton
-    fun provideCategoryService(retrofit: Retrofit): CategoryService {
-        return retrofit.create(CategoryService::class.java)
-    }
+    fun provideCategoryService(retrofit: Retrofit): CategoryService = retrofit.create(CategoryService::class.java)
 
     @Provides
     @Singleton
-    fun provideProductService(retrofit: Retrofit): ProductService {
-        return retrofit.create(ProductService::class.java)
-    }
+    fun provideProductService(retrofit: Retrofit): ProductService = retrofit.create(ProductService::class.java)
 
     @Provides
     @Singleton
-    fun provideStoreLocationService(retrofit: Retrofit): StoreLocationService {
-        return retrofit.create(StoreLocationService::class.java)
-    }
+    fun provideStoreLocationService(retrofit: Retrofit): StoreLocationService = retrofit.create(StoreLocationService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCartService(retrofit: Retrofit): CartService = retrofit.create(CartService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideOrderService(retrofit: Retrofit): OrderService = retrofit.create(OrderService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCheckoutService(retrofit: Retrofit): CheckoutService = retrofit.create(CheckoutService::class.java)
 }
