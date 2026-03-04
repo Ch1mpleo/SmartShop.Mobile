@@ -63,6 +63,7 @@ fun WelcomeScreen(
     onProfileClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onStoreClick: () -> Unit,
+    onCartClick: () -> Unit,
     onLogout: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -79,6 +80,7 @@ fun WelcomeScreen(
             HomeTopBar(
                 user = user,
                 onProfileClick = onProfileClick,
+                onCartClick = onCartClick,
                 onLogoutClick = {
                     viewModel.logout(onLogout)
                 }
@@ -111,6 +113,7 @@ fun WelcomeScreen(
 fun HomeTopBar(
     user: UserData?,
     onProfileClick: () -> Unit,
+    onCartClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     TopAppBar(
@@ -148,7 +151,7 @@ fun HomeTopBar(
             }
         },
         actions = {
-            IconButton(onClick = { /* TODO: Navigate to Cart */ }) {
+            IconButton(onClick = onCartClick) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
                     contentDescription = "Cart"

@@ -8,7 +8,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.smartshopmobile.ui.auth.LoginScreen
 import com.example.smartshopmobile.ui.auth.RegisterScreen
+import com.example.smartshopmobile.ui.cart.CartScreen
+import com.example.smartshopmobile.ui.checkout.CheckoutSuccessScreen
 import com.example.smartshopmobile.ui.home.WelcomeScreen
+import com.example.smartshopmobile.ui.order.CreateOrderScreen
+import com.example.smartshopmobile.ui.order.MyOrdersScreen
 import com.example.smartshopmobile.ui.product.ProductDetailScreen
 import com.example.smartshopmobile.ui.profile.ProfileScreen
 import com.example.smartshopmobile.ui.store.StoreLocationScreen
@@ -42,6 +46,7 @@ fun AppNavigation() {
                 onProfileClick = { navController.navigate("profile") },
                 onProductClick = { productId -> navController.navigate("productDetail/$productId") },
                 onStoreClick = { navController.navigate("storeLocation") },
+                onCartClick = { navController.navigate("cart") },
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("welcome") { inclusive = true }
@@ -51,7 +56,8 @@ fun AppNavigation() {
         }
         composable("profile") {
             ProfileScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onOrdersClick = { navController.navigate("myOrders") }
             )
         }
         composable(
@@ -65,6 +71,49 @@ fun AppNavigation() {
         composable("storeLocation") {
             StoreLocationScreen(
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable("cart") {
+            CartScreen(
+                onBackClick = { navController.popBackStack() },
+                onCheckoutClick = { cartItemIds ->
+                    val ids = cartItemIds.joinToString(",")
+                    navController.navigate("createOrder/$ids")
+                }
+            )
+        }
+        composable(
+            route = "createOrder/{cartItemIds}",
+            arguments = listOf(navArgument("cartItemIds") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("cartItemIds")?.split(",") ?: emptyList()
+            CreateOrderScreen(
+                cartItemIds = ids,
+                onBackClick = { navController.popBackStack() },
+                onOrderCreated = { _ ->
+                    navController.navigate("checkoutSuccess") {
+                        popUpTo("cart") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("myOrders") {
+            MyOrdersScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable("checkoutSuccess") {
+            CheckoutSuccessScreen(
+                onContinueShoppingClick = {
+                    navController.navigate("welcome") {
+                        popUpTo("checkoutSuccess") { inclusive = true }
+                    }
+                },
+                onViewOrdersClick = {
+                    navController.navigate("myOrders") {
+                        popUpTo("checkoutSuccess") { inclusive = true }
+                    }
+                }
             )
         }
     }

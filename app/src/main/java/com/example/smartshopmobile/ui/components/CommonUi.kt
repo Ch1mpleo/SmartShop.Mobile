@@ -20,7 +20,8 @@ fun SmartShopTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    leadingIcon: @Composable (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -28,7 +29,7 @@ fun SmartShopTextField(
         label = { Text(label) },
         modifier = modifier.fillMaxWidth(),
         textStyle = MaterialTheme.typography.bodyLarge,
-        shape = RoundedCornerShape(10.dp), // Corner: small (10dp)
+        shape = RoundedCornerShape(10.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -39,6 +40,7 @@ fun SmartShopTextField(
             cursorColor = MaterialTheme.colorScheme.primary
         ),
         visualTransformation = visualTransformation,
+        leadingIcon = leadingIcon,
         singleLine = true
     )
 }
