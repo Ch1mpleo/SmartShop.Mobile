@@ -9,7 +9,7 @@ data class ApiResponse<T>(
 data class ApiValue<T>(
     val code: String,
     val message: String,
-    val data: T
+    val data: T?
 )
 
 data class PaginatedData<T>(

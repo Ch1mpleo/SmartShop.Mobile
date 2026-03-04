@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -62,6 +63,7 @@ fun WelcomeScreen(
     onProfileClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onStoreClick: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -76,7 +78,10 @@ fun WelcomeScreen(
         topBar = {
             HomeTopBar(
                 user = user,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                onLogoutClick = {
+                    viewModel.logout(onLogout)
+                }
             )
         }
     ) { paddingValues ->
@@ -105,7 +110,8 @@ fun WelcomeScreen(
 @Composable
 fun HomeTopBar(
     user: UserData?,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     TopAppBar(
         title = {
@@ -146,6 +152,12 @@ fun HomeTopBar(
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
                     contentDescription = "Cart"
+                )
+            }
+            IconButton(onClick = onLogoutClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = "Logout"
                 )
             }
         },

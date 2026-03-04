@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartshopmobile.data.api.CategoryService
 import com.example.smartshopmobile.data.api.ProductService
 import com.example.smartshopmobile.data.api.UserService
+import com.example.smartshopmobile.data.local.TokenManager
 import com.example.smartshopmobile.data.model.CategoryResponse
 import com.example.smartshopmobile.data.model.ProductResponse
 import com.example.smartshopmobile.data.model.UserData
@@ -24,7 +25,8 @@ class HomeViewModel @Inject constructor(
     private val genericRepository: GenericRepository,
     private val categoryService: CategoryService,
     private val productService: ProductService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<CategoryResponse>>(emptyList())
@@ -67,6 +69,11 @@ class HomeViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun logout(onLogoutSuccess: () -> Unit) {
+        tokenManager.clearToken()
+        onLogoutSuccess()
     }
 
     fun onSearchQueryChanged(query: String) {
