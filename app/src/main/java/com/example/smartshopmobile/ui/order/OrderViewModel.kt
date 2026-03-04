@@ -1,5 +1,6 @@
 package com.example.smartshopmobile.ui.order
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartshopmobile.data.api.CheckoutService
@@ -21,6 +22,8 @@ class OrderViewModel @Inject constructor(
     private val checkoutService: CheckoutService
 ) : ViewModel() {
 
+    private val TAG = "SmartShop_OrderVM"
+
     private val _orders = MutableStateFlow<List<OrderResponse>>(emptyList())
     val orders: StateFlow<List<OrderResponse>> = _orders.asStateFlow()
 
@@ -32,6 +35,9 @@ class OrderViewModel @Inject constructor(
 
     private val _paymentUrl = MutableStateFlow<String?>(null)
     val paymentUrl: StateFlow<String?> = _paymentUrl.asStateFlow()
+
+    private val _paymentError = MutableStateFlow<String?>(null)
+    val paymentError: StateFlow<String?> = _paymentError.asStateFlow()
 
     fun fetchMyOrders() {
         viewModelScope.launch {
@@ -50,6 +56,11 @@ class OrderViewModel @Inject constructor(
             _isLoading.value = true
             val request = CreateOrderRequest(cartItemIds, address, phone)
             genericRepository.request { orderService.createOrder(request) }.collect { result ->
+                result.onSuccess {
+                    Log.d(TAG, "Order created successfully: ${it.value?.data?.id}")
+                }.onFailure {
+                    Log.e(TAG, "Failed to create order", it)
+                }
                 _createOrderResult.value = result.map { it.value!!.data!! }
                 _isLoading.value = false
             }
@@ -58,10 +69,22 @@ class OrderViewModel @Inject constructor(
 
     fun initiatePayment(orderId: String) {
         viewModelScope.launch {
+            Log.d(TAG, "Initiating payment for order: $orderId")
             _isLoading.value = true
+            _paymentError.value = null
             genericRepository.request { checkoutService.initiatePayment(orderId) }.collect { result ->
                 result.onSuccess { response ->
-                    _paymentUrl.value = response.value?.data
+                    val url = response.value?.data
+                    Log.d(TAG, "Payment URL received: $url")
+                    if (!url.isNullOrBlank()) {
+                        _paymentUrl.value = url
+                    } else {
+                        Log.e(TAG, "Payment URL is empty or null")
+                        _paymentError.value = "Payment URL is empty"
+                    }
+                }.onFailure { e ->
+                    Log.e(TAG, "API call failed for initiatePayment", e)
+                    _paymentError.value = e.message ?: "Failed to initiate payment"
                 }
                 _isLoading.value = false
             }
@@ -69,7 +92,12 @@ class OrderViewModel @Inject constructor(
     }
 
     fun clearPaymentUrl() {
+        Log.d(TAG, "Clearing payment URL")
         _paymentUrl.value = null
+    }
+
+    fun clearPaymentError() {
+        _paymentError.value = null
     }
 
     fun resetCreateOrderResult() {

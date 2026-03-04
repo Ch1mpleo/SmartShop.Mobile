@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.smartshopmobile.ui.auth.LoginScreen
 import com.example.smartshopmobile.ui.auth.RegisterScreen
 import com.example.smartshopmobile.ui.cart.CartScreen
@@ -90,8 +91,8 @@ fun AppNavigation() {
             CreateOrderScreen(
                 cartItemIds = ids,
                 onBackClick = { navController.popBackStack() },
-                onOrderCreated = { _ ->
-                    navController.navigate("checkoutSuccess") {
+                onOrderCreated = { orderId ->
+                    navController.navigate("checkoutSuccess/$orderId") {
                         popUpTo("cart") { inclusive = true }
                     }
                 }
@@ -102,16 +103,24 @@ fun AppNavigation() {
                 onBackClick = { navController.popBackStack() }
             )
         }
-        composable("checkoutSuccess") {
+        composable(
+            route = "checkoutSuccess/{orderId}",
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType }),
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "smartshop://payment/success?orderId={orderId}" }
+            )
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
             CheckoutSuccessScreen(
+                orderId = orderId,
                 onContinueShoppingClick = {
                     navController.navigate("welcome") {
-                        popUpTo("checkoutSuccess") { inclusive = true }
+                        popUpTo("checkoutSuccess/{orderId}") { inclusive = true }
                     }
                 },
                 onViewOrdersClick = {
                     navController.navigate("myOrders") {
-                        popUpTo("checkoutSuccess") { inclusive = true }
+                        popUpTo("checkoutSuccess/{orderId}") { inclusive = true }
                     }
                 }
             )
