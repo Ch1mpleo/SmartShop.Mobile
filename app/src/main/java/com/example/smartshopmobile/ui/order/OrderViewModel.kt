@@ -39,6 +39,16 @@ class OrderViewModel @Inject constructor(
     private val _paymentError = MutableStateFlow<String?>(null)
     val paymentError: StateFlow<String?> = _paymentError.asStateFlow()
 
+    private val _paymentStatus = MutableStateFlow<PaymentStatus>(PaymentStatus.Idle)
+    val paymentStatus: StateFlow<PaymentStatus> = _paymentStatus.asStateFlow()
+
+    sealed class PaymentStatus {
+        object Idle : PaymentStatus()
+        object Loading : PaymentStatus()
+        object Verified : PaymentStatus()
+        data class Error(val message: String) : PaymentStatus()
+    }
+
     fun fetchMyOrders() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -72,6 +82,7 @@ class OrderViewModel @Inject constructor(
             Log.d(TAG, "Initiating payment for order: $orderId")
             _isLoading.value = true
             _paymentError.value = null
+            _paymentStatus.value = PaymentStatus.Loading
             genericRepository.request { checkoutService.initiatePayment(orderId) }.collect { result ->
                 result.onSuccess { response ->
                     val url = response.value?.data
@@ -81,14 +92,20 @@ class OrderViewModel @Inject constructor(
                     } else {
                         Log.e(TAG, "Payment URL is empty or null")
                         _paymentError.value = "Payment URL is empty"
+                        _paymentStatus.value = PaymentStatus.Error("Payment URL is empty")
                     }
                 }.onFailure { e ->
                     Log.e(TAG, "API call failed for initiatePayment", e)
                     _paymentError.value = e.message ?: "Failed to initiate payment"
+                    _paymentStatus.value = PaymentStatus.Error(e.message ?: "Failed to initiate payment")
                 }
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setPaymentVerified() {
+        _paymentStatus.value = PaymentStatus.Verified
     }
 
     fun clearPaymentUrl() {
@@ -98,9 +115,16 @@ class OrderViewModel @Inject constructor(
 
     fun clearPaymentError() {
         _paymentError.value = null
+        if (_paymentStatus.value is PaymentStatus.Error) {
+            _paymentStatus.value = PaymentStatus.Idle
+        }
     }
 
     fun resetCreateOrderResult() {
         _createOrderResult.value = null
+    }
+
+    fun resetPaymentStatus() {
+        _paymentStatus.value = PaymentStatus.Idle
     }
 }

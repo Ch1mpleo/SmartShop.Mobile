@@ -1,5 +1,9 @@
 package com.example.smartshopmobile.ui.order
 
+import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.smartshopmobile.ui.components.SmartShopTextField
 
@@ -24,7 +29,7 @@ import com.example.smartshopmobile.ui.components.SmartShopTextField
 fun CreateOrderScreen(
     cartItemIds: List<String>,
     onBackClick: () -> Unit,
-    onOrderCreated: (String) -> Unit,
+    onOrderCreated: (String) -> Unit, // We'll still keep this for external logic if needed
     viewModel: OrderViewModel = hiltViewModel()
 ) {
     var address by remember { mutableStateOf("") }
@@ -32,11 +37,42 @@ fun CreateOrderScreen(
     
     val createOrderResult by viewModel.createOrderResult.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val paymentUrl by viewModel.paymentUrl.collectAsState()
+    val paymentError by viewModel.paymentError.collectAsState()
+    
+    val context = LocalContext.current
+    val TAG = "SmartShop_CreateOrder"
 
+    // 1. When order is created successfully, automatically initiate payment
     LaunchedEffect(createOrderResult) {
         createOrderResult?.onSuccess { order ->
-            onOrderCreated(order.id)
+            Log.d(TAG, "Order created: ${order.id}. Initiating payment...")
+            viewModel.initiatePayment(order.id)
             viewModel.resetCreateOrderResult()
+        }
+    }
+
+    // 2. When payment URL is received, open the browser directly
+    LaunchedEffect(paymentUrl) {
+        paymentUrl?.let { url ->
+            Log.d(TAG, "Opening Stripe URL: $url")
+            try {
+                val customTabsIntent = CustomTabsIntent.Builder().build()
+                customTabsIntent.launchUrl(context, url.toUri())
+            } catch (e: Exception) {
+                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                context.startActivity(intent)
+            } finally {
+                viewModel.clearPaymentUrl()
+            }
+        }
+    }
+
+    // 3. Handle errors
+    LaunchedEffect(paymentError) {
+        paymentError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearPaymentError()
         }
     }
 
@@ -96,10 +132,15 @@ fun CreateOrderScreen(
                 enabled = address.isNotBlank() && phone.isNotBlank() && !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
                     Text("Confirm Order", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
+            }
+            
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Preparing your secure payment...", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

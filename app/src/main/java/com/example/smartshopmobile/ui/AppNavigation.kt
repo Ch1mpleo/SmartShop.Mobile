@@ -1,6 +1,8 @@
 package com.example.smartshopmobile.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,8 +21,13 @@ import com.example.smartshopmobile.ui.profile.ProfileScreen
 import com.example.smartshopmobile.ui.store.StoreLocationScreen
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(onNavControllerReady: (NavController) -> Unit) {
     val navController = rememberNavController()
+    
+    LaunchedEffect(navController) {
+        onNavControllerReady(navController)
+    }
+
     NavHost(navController = navController, startDestination = "welcome") {
         composable("login") {
             LoginScreen(
@@ -91,11 +98,7 @@ fun AppNavigation() {
             CreateOrderScreen(
                 cartItemIds = ids,
                 onBackClick = { navController.popBackStack() },
-                onOrderCreated = { orderId ->
-                    navController.navigate("checkoutSuccess/$orderId") {
-                        popUpTo("cart") { inclusive = true }
-                    }
-                }
+                onOrderCreated = { /* Not used - redirection handled in CreateOrderScreen */ }
             )
         }
         composable("myOrders") {
@@ -105,12 +108,15 @@ fun AppNavigation() {
         }
         composable(
             route = "checkoutSuccess/{orderId}",
-            arguments = listOf(navArgument("orderId") { type = NavType.StringType }),
+            arguments = listOf(
+                navArgument("orderId") { type = NavType.StringType }
+            ),
             deepLinks = listOf(
                 navDeepLink { uriPattern = "smartshop://payment/success?orderId={orderId}" }
             )
         ) { backStackEntry ->
             val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            
             CheckoutSuccessScreen(
                 orderId = orderId,
                 onContinueShoppingClick = {
