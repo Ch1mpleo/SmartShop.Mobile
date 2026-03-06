@@ -7,5 +7,7 @@ data class ProductRequest(
     val technicalSpecifications: String,
     val price: Long,
     val imageUrl: String,
-    val categoryId: String
+    val categoryId: String,
+    val status: Int? = null,
+    val availableQuantity: Int? = null
 )

@@ -1,6 +1,7 @@
 package com.example.smartshopmobile.data.repository
 
 import com.example.smartshopmobile.data.api.AuthService
+import com.example.smartshopmobile.data.api.UserService
 import com.example.smartshopmobile.data.local.TokenManager
 import com.example.smartshopmobile.data.model.ApiResponse
 import com.example.smartshopmobile.data.model.LoginRequest
@@ -12,6 +13,7 @@ import javax.inject.Inject
 
 class AuthRepository @Inject constructor(
     private val authService: AuthService,
+    private val userService: UserService,
     private val tokenManager: TokenManager
 ) : BaseRepository() {
 
@@ -32,5 +34,15 @@ class AuthRepository @Inject constructor(
         } else {
             throw Exception(response.error ?: response.value?.message ?: "Registration failed")
         }
+    }
+
+    suspend fun getCurrentUser(): Flow<Result<ApiResponse<UserData>>> = safeApiCall {
+        userService.getCurrentUser()
+    }
+
+    fun hasToken(): Boolean = tokenManager.getToken() != null
+
+    fun logout() {
+        tokenManager.clearToken()
     }
 }

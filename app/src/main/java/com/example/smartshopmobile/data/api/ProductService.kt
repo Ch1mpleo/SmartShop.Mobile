@@ -29,6 +29,12 @@ interface ProductService {
         @Body request: ProductRequest
     ): ApiResponse<ProductResponse>
 
+    @PUT("api/products/{productId}")
+    suspend fun updateProduct(
+        @Path("productId") productId: String,
+        @Body request: ProductRequest
+    ): ApiResponse<ProductResponse>
+
     @DELETE("api/products/{productId}")
     suspend fun deleteProduct(
         @Path("productId") productId: String
