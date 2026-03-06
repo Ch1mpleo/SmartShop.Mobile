@@ -8,6 +8,7 @@ data class ProductRequest(
     val price: Long,
     val imageUrl: String,
     val categoryId: String,
-    val status: Int? = null,
-    val availableQuantity: Int? = null
+    val status: String? = null,
+    val availableQuantity: Int? = null,
+    val categoryName: String? = null
 )
