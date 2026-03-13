@@ -45,6 +45,7 @@ fun WelcomeScreen(
     val categories by viewModel.categories.collectAsState()
     val products by viewModel.products.collectAsState()
     val user by viewModel.user.collectAsState()
+    val cartItemCount by viewModel.cartItemCount.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -52,10 +53,16 @@ fun WelcomeScreen(
 
     var showFilterSheet by remember { mutableStateOf(false) }
 
+    // Fetch cart count whenever the user returns to this screen
+    LaunchedEffect(Unit) {
+        viewModel.fetchCartCount()
+    }
+
     Scaffold(
         topBar = {
             HomeTopBar(
                 user = user,
+                cartItemCount = cartItemCount,
                 onProfileClick = onProfileClick,
                 onCartClick = onCartClick,
                 onLogoutClick = {
@@ -97,6 +104,7 @@ fun WelcomeScreen(
 @Composable
 fun HomeTopBar(
     user: UserData?,
+    cartItemCount: Int,
     onProfileClick: () -> Unit,
     onCartClick: () -> Unit,
     onLogoutClick: () -> Unit
@@ -137,10 +145,20 @@ fun HomeTopBar(
         },
         actions = {
             IconButton(onClick = onCartClick) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = "Cart"
-                )
+                BadgedBox(
+                    badge = {
+                        if (cartItemCount > 0) {
+                            Badge {
+                                Text(text = cartItemCount.toString())
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = "Cart"
+                    )
+                }
             }
             IconButton(onClick = onLogoutClick) {
                 Icon(

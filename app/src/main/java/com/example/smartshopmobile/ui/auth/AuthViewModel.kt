@@ -41,6 +41,7 @@ class AuthViewModel @Inject constructor(
             fetchCurrentUser()
         } else {
             Log.d(TAG, "No token found")
+            _loginState.value = AuthState.Idle
         }
     }
 
@@ -66,6 +67,8 @@ class AuthViewModel @Inject constructor(
     private fun fetchCurrentUser(isLogin: Boolean = false) {
         viewModelScope.launch {
             Log.d(TAG, "Fetching current user profile (isLogin=$isLogin)")
+            if (!isLogin) _loginState.value = AuthState.Checking
+            
             repository.getCurrentUser().collect { result ->
                 result.fold(
                     onSuccess = { response ->
@@ -74,12 +77,17 @@ class AuthViewModel @Inject constructor(
                         _currentUser.value = user
                         if (isLogin) {
                             _loginState.value = AuthState.Success(user)
+                        } else {
+                            _loginState.value = AuthState.Idle
                         }
                     },
                     onFailure = { 
                         Log.e(TAG, "Failed to fetch current user: ${it.message}")
                         if (isLogin) {
                             _loginState.value = AuthState.Error("Failed to fetch user profile")
+                        } else {
+                            _loginState.value = AuthState.Idle
+                            repository.logout() // Token might be invalid
                         }
                     }
                 )

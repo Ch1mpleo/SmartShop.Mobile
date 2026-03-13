@@ -2,6 +2,7 @@ package com.example.smartshopmobile.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartshopmobile.data.api.CartService
 import com.example.smartshopmobile.data.api.CategoryService
 import com.example.smartshopmobile.data.api.ProductService
 import com.example.smartshopmobile.data.api.UserService
@@ -26,6 +27,7 @@ class HomeViewModel @Inject constructor(
     private val categoryService: CategoryService,
     private val productService: ProductService,
     private val userService: UserService,
+    private val cartService: CartService,
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
@@ -37,6 +39,9 @@ class HomeViewModel @Inject constructor(
 
     private val _user = MutableStateFlow<UserData?>(null)
     val user: StateFlow<UserData?> = _user.asStateFlow()
+
+    private val _cartItemCount = MutableStateFlow(0)
+    val cartItemCount: StateFlow<Int> = _cartItemCount.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -76,7 +81,8 @@ class HomeViewModel @Inject constructor(
                 val userJob = launch { fetchUser() }
                 val categoriesJob = launch { fetchCategories() }
                 val productsJob = launch { fetchProducts() }
-                joinAll(userJob, categoriesJob, productsJob)
+                val cartJob = launch { fetchCartCount() }
+                joinAll(userJob, categoriesJob, productsJob, cartJob)
             } finally {
                 _isLoading.value = false
             }
@@ -154,6 +160,18 @@ class HomeViewModel @Inject constructor(
                     _products.value = response.value?.data?.items ?: emptyList()
                 }.onFailure { e ->
                     _error.value = e.message
+                }
+            }
+        }
+    }
+
+    fun fetchCartCount() {
+        viewModelScope.launch {
+            genericRepository.request { cartService.getMyCart() }.collect { result ->
+                result.onSuccess { response ->
+                    _cartItemCount.value = response.value?.data?.totalItems ?: 0
+                }.onFailure {
+                    // Handle silently
                 }
             }
         }
