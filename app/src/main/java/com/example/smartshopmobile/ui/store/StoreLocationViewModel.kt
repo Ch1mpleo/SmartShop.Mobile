@@ -7,6 +7,7 @@ import com.example.smartshopmobile.data.api.StoreLocationService
 import com.example.smartshopmobile.data.model.StoreLocationResponse
 import com.example.smartshopmobile.data.repository.GenericRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,8 +39,13 @@ class StoreLocationViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isRouting = MutableStateFlow(false)
+    val isRouting: StateFlow<Boolean> = _isRouting.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private var routingJob: Job? = null
 
     init {
         fetchAllStores()
@@ -62,6 +68,9 @@ class StoreLocationViewModel @Inject constructor(
 
     fun findNearestStores(latitude: Double, longitude: Double) {
         _userLocation.value = UserLocation(latitude, longitude)
+        // Clear old route when searching for new location
+        _roadPoints.value = emptyList()
+        
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -79,9 +88,10 @@ class StoreLocationViewModel @Inject constructor(
     }
 
     fun fetchRoadRoute(startLat: Double, startLon: Double, endLat: Double, endLon: Double) {
-        viewModelScope.launch {
+        routingJob?.cancel()
+        routingJob = viewModelScope.launch {
             try {
-                _isLoading.value = true
+                _isRouting.value = true
                 val coordinates = "$startLon,$startLat;$endLon,$endLat"
                 val response = osrmService.getRoute(coordinates)
                 
@@ -90,17 +100,21 @@ class StoreLocationViewModel @Inject constructor(
                         GeoPoint(it[1], it[0]) // [lon, lat] -> GeoPoint(lat, lon)
                     }
                     _roadPoints.value = points
+                } else {
+                    _roadPoints.value = emptyList()
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to fetch road route: ${e.message}"
-                _roadPoints.value = emptyList()
+                // Don't clear points on transient error to avoid flickering if testing
             } finally {
-                _isLoading.value = false
+                _isRouting.value = false
             }
         }
     }
 
     fun clearRoute() {
+        routingJob?.cancel()
         _roadPoints.value = emptyList()
+        _isRouting.value = false
     }
 }

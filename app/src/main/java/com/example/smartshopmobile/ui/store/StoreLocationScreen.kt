@@ -40,6 +40,7 @@ fun StoreLocationScreen(
     val stores by viewModel.stores.collectAsState()
     val nearestStores by viewModel.nearestStores.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isRouting by viewModel.isRouting.collectAsState()
     val userLocation by viewModel.userLocation.collectAsState()
     val roadPoints by viewModel.roadPoints.collectAsState()
     val context = LocalContext.current
@@ -63,11 +64,15 @@ fun StoreLocationScreen(
 
     // Fetch road route whenever user location or selected store changes
     LaunchedEffect(userLocation, selectedStoreForRoute) {
-        if (userLocation != null && selectedStoreForRoute != null) {
+        val uLoc = userLocation
+        val sStore = selectedStoreForRoute
+        if (uLoc != null && sStore != null) {
             viewModel.fetchRoadRoute(
-                userLocation!!.latitude, userLocation!!.longitude,
-                selectedStoreForRoute!!.latitude, selectedStoreForRoute!!.longitude
+                uLoc.latitude, uLoc.longitude,
+                sStore.latitude, sStore.longitude
             )
+        } else {
+            viewModel.clearRoute()
         }
     }
 
@@ -159,6 +164,7 @@ fun StoreLocationScreen(
                 update = { view ->
                     view.overlays.removeIf { it is Marker || it is Polyline }
                     
+                    // Draw Road Route
                     if (roadPoints.isNotEmpty()) {
                         val line = Polyline(view)
                         line.outlinePaint.color = android.graphics.Color.parseColor("#6750A4")
@@ -167,6 +173,7 @@ fun StoreLocationScreen(
                         view.overlays.add(line)
                     }
 
+                    // Store Markers
                     stores.forEach { store ->
                         val marker = Marker(view)
                         marker.position = GeoPoint(store.latitude, store.longitude)
@@ -182,6 +189,7 @@ fun StoreLocationScreen(
                         view.overlays.add(marker)
                     }
 
+                    // User Selection Marker
                     userLocation?.let {
                         val userMarker = Marker(view)
                         userMarker.position = GeoPoint(it.latitude, it.longitude)
@@ -195,6 +203,7 @@ fun StoreLocationScreen(
                 }
             )
 
+            // Guidance UI
             if (userLocation == null) {
                 Surface(
                     modifier = Modifier.align(Alignment.TopCenter).padding(top = 16.dp),
@@ -213,7 +222,8 @@ fun StoreLocationScreen(
                 }
             }
 
-            if (isLoading) {
+            // Full-screen loading overlay
+            if (isLoading || isRouting) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -236,7 +246,7 @@ fun StoreLocationScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                "Finding route...",
+                                text = if (isRouting) "Calculating road route..." else "Finding stores...",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium
                             )
@@ -266,7 +276,7 @@ fun StoreItem(
             .clickable { onSelect() },
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
             else 
                 MaterialTheme.colorScheme.surface
         ),
@@ -280,7 +290,7 @@ fun StoreItem(
         ListItem(
             headlineContent = { 
                 Text(
-                    store.storeName, 
+                    text = store.storeName, 
                     fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 ) 
@@ -288,15 +298,15 @@ fun StoreItem(
             supportingContent = { 
                 Column {
                     Text(
-                        store.address, 
+                        text = store.address, 
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (distance != null) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                             Icon(
-                                Icons.Default.DirectionsRun, 
-                                null, 
+                                imageVector = Icons.Default.DirectionsRun, 
+                                contentDescription = null, 
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -328,8 +338,8 @@ fun StoreItem(
             trailingContent = {
                 if (isSelected) {
                     Icon(
-                        Icons.Default.CheckCircle, 
-                        contentDescription = "Active Route", 
+                        imageVector = Icons.Default.CheckCircle, 
+                        contentDescription = "Selected", 
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
@@ -341,7 +351,7 @@ fun StoreItem(
 }
 
 fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val r = 6371
+    val r = 6371 // Earth radius in km
     val dLat = Math.toRadians(lat2 - lat1)
     val dLon = Math.toRadians(lon2 - lon1)
     val a = sin(dLat / 2) * sin(dLat / 2) +
