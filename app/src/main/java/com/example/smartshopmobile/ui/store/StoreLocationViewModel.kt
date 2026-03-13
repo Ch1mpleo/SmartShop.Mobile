@@ -2,6 +2,7 @@ package com.example.smartshopmobile.ui.store
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartshopmobile.data.api.OsrmService
 import com.example.smartshopmobile.data.api.StoreLocationService
 import com.example.smartshopmobile.data.model.StoreLocationResponse
 import com.example.smartshopmobile.data.repository.GenericRepository
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.osmdroid.util.GeoPoint
 import javax.inject.Inject
 
 data class UserLocation(val latitude: Double, val longitude: Double)
@@ -17,7 +19,8 @@ data class UserLocation(val latitude: Double, val longitude: Double)
 @HiltViewModel
 class StoreLocationViewModel @Inject constructor(
     private val genericRepository: GenericRepository,
-    private val storeLocationService: StoreLocationService
+    private val storeLocationService: StoreLocationService,
+    private val osrmService: OsrmService
 ) : ViewModel() {
 
     private val _stores = MutableStateFlow<List<StoreLocationResponse>>(emptyList())
@@ -28,6 +31,9 @@ class StoreLocationViewModel @Inject constructor(
 
     private val _userLocation = MutableStateFlow<UserLocation?>(null)
     val userLocation: StateFlow<UserLocation?> = _userLocation.asStateFlow()
+
+    private val _roadPoints = MutableStateFlow<List<GeoPoint>>(emptyList())
+    val roadPoints: StateFlow<List<GeoPoint>> = _roadPoints.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -70,5 +76,31 @@ class StoreLocationViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun fetchRoadRoute(startLat: Double, startLon: Double, endLat: Double, endLon: Double) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val coordinates = "$startLon,$startLat;$endLon,$endLat"
+                val response = osrmService.getRoute(coordinates)
+                
+                if (response.routes.isNotEmpty()) {
+                    val points = response.routes[0].geometry.coordinates.map { 
+                        GeoPoint(it[1], it[0]) // [lon, lat] -> GeoPoint(lat, lon)
+                    }
+                    _roadPoints.value = points
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to fetch road route: ${e.message}"
+                _roadPoints.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun clearRoute() {
+        _roadPoints.value = emptyList()
     }
 }

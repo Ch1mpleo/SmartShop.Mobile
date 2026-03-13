@@ -50,6 +50,18 @@ class HomeViewModel @Inject constructor(
     private val _selectedCategoryId = MutableStateFlow<String?>(null)
     val selectedCategoryId: StateFlow<String?> = _selectedCategoryId.asStateFlow()
 
+    private val _brand = MutableStateFlow<String?>(null)
+    val brand: StateFlow<String?> = _brand.asStateFlow()
+
+    private val _minPrice = MutableStateFlow<Double?>(null)
+    val minPrice: StateFlow<Double?> = _minPrice.asStateFlow()
+
+    private val _maxPrice = MutableStateFlow<Double?>(null)
+    val maxPrice: StateFlow<Double?> = _maxPrice.asStateFlow()
+
+    private val _minRating = MutableStateFlow<Double?>(null)
+    val minRating: StateFlow<Double?> = _minRating.asStateFlow()
+
     private var searchJob: Job? = null
 
     init {
@@ -86,11 +98,23 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onCategorySelected(categoryId: String?) {
-        if (_selectedCategoryId.value == categoryId) {
-            _selectedCategoryId.value = null // Toggle off
-        } else {
-            _selectedCategoryId.value = categoryId
-        }
+        _selectedCategoryId.value = if (_selectedCategoryId.value == categoryId) null else categoryId
+        fetchProducts()
+    }
+
+    fun onBrandChanged(brand: String?) {
+        _brand.value = brand
+        fetchProducts()
+    }
+
+    fun onPriceRangeChanged(min: Double?, max: Double?) {
+        _minPrice.value = min
+        _maxPrice.value = max
+        fetchProducts()
+    }
+
+    fun onMinRatingChanged(rating: Double?) {
+        _minRating.value = rating
         fetchProducts()
     }
 
@@ -114,12 +138,16 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun fetchProducts() {
+    fun fetchProducts() {
         viewModelScope.launch {
             genericRepository.request { 
                 productService.getProducts(
                     search = _searchQuery.value.takeIf { it.isNotBlank() },
-                    categoryId = _selectedCategoryId.value
+                    categoryId = _selectedCategoryId.value,
+                    brand = _brand.value,
+                    minPrice = _minPrice.value,
+                    maxPrice = _maxPrice.value,
+                    minRating = _minRating.value
                 ) 
             }.collect { result ->
                 result.onSuccess { response ->

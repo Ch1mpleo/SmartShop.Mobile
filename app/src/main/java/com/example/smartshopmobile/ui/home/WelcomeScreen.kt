@@ -1,18 +1,8 @@
 package com.example.smartshopmobile.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -23,40 +13,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.smartshopmobile.data.model.CategoryResponse
 import com.example.smartshopmobile.data.model.ProductResponse
 import com.example.smartshopmobile.data.model.UserData
-import com.example.smartshopmobile.ui.theme.SmartShopMobileTheme
+import java.util.Locale
 
 @Composable
 fun WelcomeScreen(
@@ -74,6 +49,8 @@ fun WelcomeScreen(
     val error by viewModel.error.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
+
+    var showFilterSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -101,9 +78,17 @@ fun WelcomeScreen(
                 onCategorySelected = viewModel::onCategorySelected,
                 onProductClick = onProductClick,
                 onStoreClick = onStoreClick,
+                onFilterClick = { showFilterSheet = true },
                 isLoading = isLoading,
                 error = error
             )
+
+            if (showFilterSheet) {
+                FilterBottomSheet(
+                    viewModel = viewModel,
+                    onDismiss = { showFilterSheet = false }
+                )
+            }
         }
     }
 }
@@ -182,6 +167,7 @@ fun HomeContent(
     onCategorySelected: (String?) -> Unit,
     onProductClick: (String) -> Unit,
     onStoreClick: () -> Unit,
+    onFilterClick: () -> Unit,
     isLoading: Boolean,
     error: String?
 ) {
@@ -194,16 +180,30 @@ fun HomeContent(
     ) {
         item(span = { GridItemSpan(2) }) {
             Column {
-                // Search Bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = onSearchQueryChanged,
+                // Search Bar and Filter
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search products...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChanged,
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Search products...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = onFilterClick,
+                        modifier = Modifier
+                            .size(52.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    ) {
+                        Icon(Icons.Default.FilterList, contentDescription = "Filter")
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -261,7 +261,7 @@ fun HomeContent(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
-                    text = "Popular Products",
+                    text = "Products",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -327,31 +327,17 @@ fun CategoryItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
-                MaterialTheme.colorScheme.secondaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 2.dp),
-        modifier = Modifier.clickable(onClick = onClick)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = categoryName,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (isSelected)
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                else
-                    MaterialTheme.colorScheme.onSecondaryContainer,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-            )
-        }
+        Text(
+            text = categoryName,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge
+        )
     }
 }
 
@@ -361,72 +347,170 @@ fun ProductItem(
     onClick: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp)
-        ) {
+        Column {
             AsyncImage(
                 model = product.imageUrl,
                 contentDescription = product.productName,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .height(140.dp),
                 contentScale = ContentScale.Crop
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = product.productName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = "$${product.price}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = product.productName,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = Color(0xFFFFB300)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = String.format(Locale.getDefault(), "%.1f", product.averageRating ?: 0.0),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "| Sold ${product.soldCount ?: 0}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "$${product.price.toInt()}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WelcomeScreenPreview() {
-    SmartShopMobileTheme {
-        HomeContent(
-            categories = listOf(
-                CategoryResponse("1", "Fashion", "", 10),
-                CategoryResponse("2", "Electronics", "", 5)
-            ),
-            products = listOf(
-                ProductResponse(
-                    "1", "Smartphone", "Cool phone", "Very cool phone", "", 999.0, "", "InStock", 10, "2", "Electronics", ""
+fun FilterBottomSheet(
+    viewModel: HomeViewModel,
+    onDismiss: () -> Unit
+) {
+    val brand by viewModel.brand.collectAsState()
+    val minPrice by viewModel.minPrice.collectAsState()
+    val maxPrice by viewModel.maxPrice.collectAsState()
+    val minRating by viewModel.minRating.collectAsState()
+
+    var tempBrand by remember { mutableStateOf(brand ?: "") }
+    var tempMinPrice by remember { mutableStateOf(minPrice?.toString() ?: "") }
+    var tempMaxPrice by remember { mutableStateOf(maxPrice?.toString() ?: "") }
+    var tempMinRating by remember { mutableStateOf(minRating ?: 0.0) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            Text(
+                text = "Filter Products",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text("Brand", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            OutlinedTextField(
+                value = tempBrand,
+                onValueChange = { tempBrand = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("e.g. Apple, Sony") },
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Price Range", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = tempMinPrice,
+                    onValueChange = { tempMinPrice = it },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Min") },
+                    singleLine = true
                 )
-            ),
-            searchQuery = "",
-            onSearchQueryChanged = {},
-            selectedCategoryId = null,
-            onCategorySelected = {},
-            onProductClick = {},
-            onStoreClick = {},
-            isLoading = false,
-            error = null
-        )
+                OutlinedTextField(
+                    value = tempMaxPrice,
+                    onValueChange = { tempMaxPrice = it },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Max") },
+                    singleLine = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Minimum Rating", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Slider(
+                value = tempMinRating.toFloat(),
+                onValueChange = { tempMinRating = it.toDouble() },
+                valueRange = 0f..5f,
+                steps = 4
+            )
+            Text(
+                text = String.format(Locale.getDefault(), "%.1f Stars", tempMinRating),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.End
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        viewModel.onBrandChanged(null)
+                        viewModel.onPriceRangeChanged(null, null)
+                        viewModel.onMinRatingChanged(null)
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Clear All")
+                }
+                Button(
+                    onClick = {
+                        viewModel.onBrandChanged(tempBrand.takeIf { it.isNotBlank() })
+                        viewModel.onPriceRangeChanged(
+                            tempMinPrice.toDoubleOrNull(),
+                            tempMaxPrice.toDoubleOrNull()
+                        )
+                        viewModel.onMinRatingChanged(tempMinRating.takeIf { it > 0 })
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Apply")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
