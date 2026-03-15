@@ -48,28 +48,51 @@ fun ChatScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
-                    Column {
-                        Text("SmartShop Support", style = MaterialTheme.typography.titleMedium)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = when (connectionState) {
-                                HubConnectionState.CONNECTED -> "Online"
-                                HubConnectionState.CONNECTING -> "Connecting..."
-                                else -> "Offline - Reconnecting"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (connectionState == HubConnectionState.CONNECTED) Color(0xFF4CAF50) else Color.Gray
+                            "Support Center",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
                         )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (connectionState == HubConnectionState.CONNECTED)
+                                            Color(0xFFE8FF47)
+                                        else Color.Gray
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = when (connectionState) {
+                                    HubConnectionState.CONNECTED -> "Active Now"
+                                    HubConnectionState.CONNECTING -> "Connecting..."
+                                    else -> "Connecting..."
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
@@ -79,15 +102,17 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
         ) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
             LazyColumn(
                 state = listState,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(messages) { message ->
                     val isMe = message.userId.equals(currentUser?.id, ignoreCase = true)
@@ -95,53 +120,62 @@ fun ChatScreen(
                 }
             }
 
+            // Input Area
             Surface(
-                tonalElevation = 8.dp,
-                shadowElevation = 16.dp,
-                color = MaterialTheme.colorScheme.surface
+                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .fillMaxWidth()
-                        .imePadding(),
+                        .navigationBarsPadding()
+                        .imePadding()
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = messageText,
                         onValueChange = { messageText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type a message...") },
-                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(24.dp)),
+                        placeholder = { Text("Ask something...", fontSize = 16.sp) },
                         maxLines = 4,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        )
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    FloatingActionButton(
+                    IconButton(
                         onClick = {
                             if (messageText.isNotBlank()) {
                                 viewModel.sendMessage(messageText)
                                 messageText = ""
                             }
                         },
-                        modifier = Modifier.size(48.dp),
-                        containerColor = if (messageText.isNotBlank() && connectionState == HubConnectionState.CONNECTED) 
-                                            MaterialTheme.colorScheme.primary 
-                                         else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = Color.White,
-                        shape = CircleShape,
-                        elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+                        enabled = messageText.isNotBlank() && connectionState == HubConnectionState.CONNECTED,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                if (messageText.isNotBlank() && connectionState == HubConnectionState.CONNECTED)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant,
+                                CircleShape
+                            )
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
-                            modifier = Modifier.size(20.dp),
                             tint = if (messageText.isNotBlank() && connectionState == HubConnectionState.CONNECTED)
-                                        Color.White
-                                   else Color.Gray
+                                MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -169,35 +203,45 @@ fun ChatMessageItem(message: ChatMessageDto, isCurrentUser: Boolean) {
         if (!isCurrentUser) {
             Text(
                 text = message.username,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(start = 12.dp, bottom = 4.dp),
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                fontWeight = FontWeight.SemiBold
             )
         }
         
         Surface(
-            color = if (isCurrentUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+            color = if (isCurrentUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isCurrentUser) 16.dp else 4.dp,
-                bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+                topStart = 20.dp,
+                topEnd = 20.dp,
+                bottomStart = if (isCurrentUser) 20.dp else 4.dp,
+                bottomEnd = if (isCurrentUser) 4.dp else 20.dp
             ),
-            tonalElevation = 1.dp
+            modifier = Modifier.widthIn(max = 280.dp)
         ) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(
                     text = message.message,
-                    color = if (isCurrentUser) Color.White else MaterialTheme.colorScheme.onSecondaryContainer,
-                    style = MaterialTheme.typography.bodyMedium
+                    color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 17.sp,
+                        lineHeight = 22.sp
+                    )
                 )
-                if (displayTime.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = displayTime,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isCurrentUser) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f),
-                        modifier = Modifier.align(Alignment.End)
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = if (isCurrentUser)
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
             }
