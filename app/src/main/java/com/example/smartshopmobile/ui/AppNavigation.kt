@@ -1,6 +1,8 @@
 package com.example.smartshopmobile.ui
 
 import android.util.Log
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +33,7 @@ import com.example.smartshopmobile.ui.order.MyOrdersScreen
 import com.example.smartshopmobile.ui.product.ProductDetailScreen
 import com.example.smartshopmobile.ui.profile.ProfileScreen
 import com.example.smartshopmobile.ui.store.StoreLocationScreen
+import com.example.smartshopmobile.ui.chat.ChatScreen
 
 @Composable
 fun AppNavigation(
@@ -97,7 +100,9 @@ fun AppNavigation(
             startDestination = if (currentUser != null) {
                 if (currentUser?.role.equals(ROLE_ADMIN, ignoreCase = true) || 
                     currentUser?.role.equals(ROLE_STAFF, ignoreCase = true)) "management" else "welcome"
-            } else "login"
+            } else "login",
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
             composable("login") {
                 LoginScreen(
@@ -122,11 +127,15 @@ fun AppNavigation(
                     onProductClick = { productId -> navController.navigate("productDetail/$productId") },
                     onStoreClick = { navController.navigate("storeLocation") },
                     onCartClick = { navController.navigate("cart") },
+                    onChatClick = { navController.navigate("chat") },
                     onLogout = { authViewModel.logout() }
                 )
             }
             composable("management") {
-                ManagementScreen(onLogout = { authViewModel.logout() })
+                ManagementScreen(
+                    onLogout = { authViewModel.logout() },
+                    onChatClick = { navController.navigate("chat") }
+                )
             }
             composable("profile") {
                 ProfileScreen(
@@ -142,6 +151,17 @@ fun AppNavigation(
             }
             composable("storeLocation") {
                 StoreLocationScreen(onBackClick = { navController.popBackStack() })
+            }
+            composable(
+                route = "chat",
+                enterTransition = {
+                    slideInVertically(initialOffsetY = { it }, animationSpec = tween(400)) + fadeIn()
+                },
+                exitTransition = {
+                    slideOutVertically(targetOffsetY = { it }, animationSpec = tween(400)) + fadeOut()
+                }
+            ) {
+                ChatScreen(onBackClick = { navController.popBackStack() })
             }
             composable("cart") {
                 CartScreen(

@@ -1,14 +1,12 @@
 package com.example.smartshopmobile.ui.management
 
-import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,7 +17,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +31,7 @@ import com.example.smartshopmobile.data.model.ProductResponse
 @Composable
 fun ManagementScreen(
     onLogout: () -> Unit,
+    onChatClick: () -> Unit,
     viewModel: ManagementViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -53,6 +51,17 @@ fun ManagementScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onChatClick,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = Color.White,
+                shape = CircleShape,
+                modifier = Modifier.padding(bottom = 80.dp) // Offset to avoid overlapping with tab FABs
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Chat Support")
+            }
         }
     ) { paddingValues ->
         Column(
@@ -269,7 +278,7 @@ fun ProductDialog(
     var specs by remember { mutableStateOf(product?.technicalSpecifications ?: "") }
     var price by remember { mutableStateOf(product?.price?.toLong()?.toString() ?: "") }
     var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "") }
-    var restockAmount by remember { mutableStateOf("0") }
+    var availableQuantity by remember { mutableStateOf(product?.availableQuantity?.toString() ?: "0") }
     var status by remember { mutableStateOf(product?.status ?: "InStock") }
     
     var selectedCategory by remember { mutableStateOf(categories.find { it.id == product?.categoryId } ?: categories.firstOrNull()) }
@@ -284,7 +293,7 @@ fun ProductDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    // Category Dropdown (Better UX than tabs in a dialog)
+                    // Category Dropdown
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
@@ -335,24 +344,13 @@ fun ProductDialog(
                             shape = RoundedCornerShape(12.dp)
                         )
                         OutlinedTextField(
-                            value = restockAmount,
-                            onValueChange = { restockAmount = it },
-                            label = { Text("Restock (+)") },
-                            modifier = Modifier.weight(0.8f),
-                            shape = RoundedCornerShape(12.dp),
-                            suffix = { if (product != null) Text("(${product.availableQuantity})") }
+                            value = availableQuantity,
+                            onValueChange = { availableQuantity = it },
+                            label = { Text("Quantity") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = imageUrl,
-                        onValueChange = { imageUrl = it },
-                        label = { Text("Image URL") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
                 }
 
                 item {
@@ -363,6 +361,16 @@ fun ProductDialog(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         maxLines = 2
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = imageUrl,
+                        onValueChange = { imageUrl = it },
+                        label = { Text("Image URL") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
 
@@ -381,55 +389,34 @@ fun ProductDialog(
                     OutlinedTextField(
                         value = specs,
                         onValueChange = { specs = it },
-                        label = { Text("Technical Specifications") },
+                        label = { Text("Specifications") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        minLines = 2
+                        minLines = 3
                     )
-                }
-
-                item {
-                    Text("Product Status", style = MaterialTheme.typography.labelMedium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = status == "InStock",
-                            onClick = { status = "InStock" },
-                            label = { Text("In Stock") },
-                            leadingIcon = if (status == "InStock") { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
-                        )
-                        FilterChip(
-                            selected = status == "OutOfStock",
-                            onClick = { status = "OutOfStock" },
-                            label = { Text("Out of Stock") },
-                            leadingIcon = if (status == "OutOfStock") { { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) } } else null
-                        )
-                    }
                 }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val currentStock = product?.availableQuantity ?: 0
-                    val addedStock = restockAmount.toIntOrNull() ?: 0
-                    val finalQuantity = currentStock + addedStock
-
-                    onSave(ProductRequest(
-                        productName = name,
-                        briefDescription = briefDesc,
-                        fullDescription = fullDesc,
-                        technicalSpecifications = specs,
-                        price = price.toLongOrNull() ?: 0L,
-                        imageUrl = imageUrl,
-                        categoryId = selectedCategory?.id ?: "",
-                        status = if (finalQuantity > 0) status else "OutOfStock",
-                        availableQuantity = finalQuantity,
-                        categoryName = selectedCategory?.categoryName
-                    ))
+                    onSave(
+                        ProductRequest(
+                            categoryId = selectedCategory?.id ?: "",
+                            productName = name,
+                            briefDescription = briefDesc,
+                            fullDescription = fullDesc,
+                            technicalSpecifications = specs,
+                            price = price.toLongOrNull() ?: 0L,
+                            imageUrl = imageUrl,
+                            availableQuantity = availableQuantity.toIntOrNull() ?: 0,
+                            status = status
+                        )
+                    )
                 },
-                shape = RoundedCornerShape(12.dp)
+                enabled = name.isNotBlank() && price.isNotBlank() && selectedCategory != null
             ) {
-                Text("Save Product")
+                Text("Save")
             }
         },
         dismissButton = {
@@ -440,5 +427,7 @@ fun ProductDialog(
 
 @Composable
 fun StoreManagementTab() {
-    Text("Store Management Content", modifier = Modifier.fillMaxSize().padding(16.dp))
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Store Management coming soon...")
+    }
 }
